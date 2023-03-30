@@ -13,7 +13,7 @@ STATIC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "swagger_u
 
 def export_swagger(
     routes,
-    api_base_ur="/",
+    api_base_url="/",
     description="Swagger API definition",
     api_version="1.0.0",
     title="Swagger API",
