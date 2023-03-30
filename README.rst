@@ -35,9 +35,11 @@ by*\ `aiohttp-swagger <https://github.com/cr0hn/aiohttp-swagger>`__\ *package
 
 Installation
 ------------
-
 ::
-
+   # manaul install
+   pip install .
+   
+::
    pip install -U tornado-swagger
 
 What’s tornado-swagger

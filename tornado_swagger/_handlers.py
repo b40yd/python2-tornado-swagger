@@ -2,7 +2,7 @@ import tornado.web
 
 
 class TornadoBaseHandler(tornado.web.RequestHandler):
-    def data_received(self, chunk: bytes):
+    def data_received(self, chunk):
         pass
 
 

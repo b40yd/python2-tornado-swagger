@@ -1,18 +1,37 @@
 # pylint: disable=R0401,C0415
 import abc
 import collections
-import inspect
+import sys
 import os
 import re
-import typing
 import warnings
-
-import tornado.web
 import yaml
+import inspect
 
 from tornado_swagger.const import API_OPENAPI_3, API_SWAGGER_2
 
-SWAGGER_TEMPLATE = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates", "swagger.yaml"))
+if sys.version >= "3":
+    from inspect import getfullargspec
+else:
+
+    class getfullargspec(object):
+        """A quick and dirty replacement for getfullargspec for Python 2.X"""
+
+        def __init__(self, f):
+            self.args, self.varargs, self.varkw, self.defaults = inspect.getargspec(f)
+            self.kwonlyargs = []
+            self.kwonlydefaults = None
+
+        def __iter__(self):
+            yield self.args
+            yield self.varargs
+            yield self.varkw
+            yield self.defaults
+
+
+SWAGGER_TEMPLATE = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "templates", "swagger.yaml")
+)
 SWAGGER_DOC_SEPARATOR = "---"
 
 
@@ -48,7 +67,7 @@ def build_swagger_docs(endpoint_doc):
 
 def _try_extract_doc(func):
     """Extract docstring from origin function removing decorators"""
-    return inspect.unwrap(func).__doc__
+    return func.__doc__
 
 
 def _build_doc_from_func_doc(handler):
@@ -66,7 +85,7 @@ def _build_doc_from_func_doc(handler):
 
 def _try_extract_args(method_handler):
     """Extract method args from origin function removing decorators"""
-    return inspect.getfullargspec(inspect.unwrap(method_handler)).args[1:]
+    return getfullargspec(method_handler).args[1:]
 
 
 def _extract_parameters_names(handler, parameters_count, method):
@@ -93,7 +112,10 @@ def _format_handler_path(route, method):
     brackets = brackets_regex.findall(route_pattern)
 
     if len(brackets) != len(parameters):
-        warnings.warn("Illegal route. route.regex.groups does not match all parameters. Route = " + str(route))
+        warnings.warn(
+            "Illegal route. route.regex.groups does not match all parameters. Route = "
+            + str(route)
+        )
         return None
 
     for i, entity in enumerate(brackets):
@@ -126,7 +148,9 @@ def _extract_paths(routes):
     paths = collections.defaultdict(dict)
 
     for route in routes:
-        for method_name, method_description in _build_doc_from_func_doc(route.target).items():
+        for method_name, method_description in _build_doc_from_func_doc(
+            route.target
+        ).items():
             path_handler = _format_handler_path(route, method_name)
             if path_handler is None:
                 continue
@@ -136,7 +160,7 @@ def _extract_paths(routes):
     return paths
 
 
-class BaseDocBuilder(abc.ABC):
+class BaseDocBuilder:
     """Doc builder"""
 
     @property
@@ -147,8 +171,7 @@ class BaseDocBuilder(abc.ABC):
     @abc.abstractmethod
     def generate_doc(
         self,
-        routes: typing.List[tornado.web.URLSpec],
-        *,
+        routes,
         api_base_url,
         description,
         api_version,
@@ -158,7 +181,7 @@ class BaseDocBuilder(abc.ABC):
         security_definitions,
         security,
         models,
-        parameters
+        parameters,
     ):
         """Generate docs"""
 
@@ -173,8 +196,7 @@ class Swagger2DocBuilder(BaseDocBuilder):
 
     def generate_doc(
         self,
-        routes: typing.List[tornado.web.URLSpec],
-        *,
+        routes,
         api_base_url,
         description,
         api_version,
@@ -184,7 +206,7 @@ class Swagger2DocBuilder(BaseDocBuilder):
         security_definitions,
         security,
         models,
-        parameters
+        parameters,
     ):
         """Generate docs"""
         swagger_spec = {
@@ -220,8 +242,7 @@ class OpenApiDocBuilder(BaseDocBuilder):
 
     def generate_doc(
         self,
-        routes: typing.List[tornado.web.URLSpec],
-        *,
+        routes,
         api_base_url,
         description,
         api_version,
@@ -231,7 +252,7 @@ class OpenApiDocBuilder(BaseDocBuilder):
         security_definitions,
         security,
         models,
-        parameters
+        parameters,
     ):
         """Generate docs"""
         swagger_spec = {
@@ -264,8 +285,7 @@ doc_builders = {b.schema: b for b in [Swagger2DocBuilder(), OpenApiDocBuilder()]
 
 
 def generate_doc_from_endpoints(
-    routes: typing.List[tornado.web.URLSpec],
-    *,
+    routes,
     api_base_url,
     description,
     api_version,
@@ -274,7 +294,7 @@ def generate_doc_from_endpoints(
     schemes,
     security_definitions,
     security,
-    api_definition_version
+    api_definition_version,
 ):
     """Generate doc based on routes"""
     from tornado_swagger.model import export_swagger_models
